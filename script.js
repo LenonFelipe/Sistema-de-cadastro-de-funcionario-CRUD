@@ -1,4 +1,4 @@
-const modal = document.querySelector(".node-container");
+const modal = document.querySelector(".modal-container");
 const tbody = document.querySelector("tbody");
 const sNome = document.querySelector("#m-nome");
 const sFuncao = document.querySelector("#m-funcao");
@@ -12,43 +12,28 @@ let itens
 let id
 
 
-/* Função para pegar os itens do banco através do getItem do nosso banco dbfunc e caso não tiver nada, vai retornar um array vazio */
-const getItensBD = () => JSON.parse(localStorage.getItem('dbfunc')) ?? [];
-/* Função para setar os items da nossa variável itens pra dentro do nosso banco */
-const setItensBD = () => localStorage.setItem('dbfunc', JSON.stringify(items));
+/* Função pra abrirmos nosso modal pra quando for clicar em incluir, iremos adicionar a classe active pro modal ficar ativo em tela 
+e cada clique fora do modal, será removido o active, adicionamos uma condição pra quando for pra edição
+ele vai carregar os itens e caso nao for uma edição, ele vai carregar os itens vazios para adiocionarmos  */
 
-/* Função pra quando a tela for carregada e vai pegar os itens do nosso banco de dados e será feito um for em cada dado
-pra que seja criada cada linha através do insertItem  que será criado abaixo dessa função */
+function openModal(edit = false, index = 0) {
+    modal.classList.add('active')
 
-function loadItens(){
-    itens = getItensBD()
-    tbody.innerHTML = ''
-    itens.forEach((item, index) => {
-        insertItem(item, index)
-    })
-}
-
-loadItens()
-
-/* Nessa função irei passar o item do nosso banco e tb o index, criar um elemtno tr e através do innerHTML
-eu vou criar as td de nome, função e salário, criar as colunas de edição e exclusão e por fim, incluindo cada item 
-pra dentro do nosso body */
-
-function insertItem(item , index) {
-    let tr = document.createElement("tr")
-
-    tr.innerHTML = `
-    <td>${item.nome}</td>
-    <td>${item.funcao}</td>
-    <td>${item.salario}</td>
-    <td class="acao">
-        <button onclick="editItem(${index})"><i class='bx bx-edit'> </i></button>
-    </td>
-    <td class="acao">
-        <button onclick="deleteItem(${index})"<i class='bx bx-trash'> </i></button>
-    </td>
-    `
-    tbody.appendChild(tr)
+    modal.onclick = e => {
+        if(e.target.className.indexOf('modal-container') !== -1) {
+            modal.classList.remove('ative')
+        }
+    }
+    if(edit) {
+        sNome.value = itens[index].nome
+        sFuncao.value = itens[index].funcao
+        sSalario.value = itens[index].salario
+        id = index
+    } else {
+        sNome.value = ''
+        sFuncao.value = ''
+        sSalario.value = ''
+    }
 }
 
 /* Funções de edição e deleção */
@@ -68,31 +53,76 @@ function deleteItem(index) {
     loadItens()
 }
 
-/* Função pra abrirmos nosso modal pra quando for clicar em incluir, iremos adicionar a classe active pro modal ficar ativo em tela 
-e cada clique fora do modal, será removido o active, adicionamos uma condição pra quando for pra edição
-ele vai carregar os itens e caso nao for uma edição, ele vai carregar os itens vazios para adiocionarmos  */
+/* Nessa função irei passar o item do nosso banco e tb o index, criar um elemtno tr e através do innerHTML
+eu vou criar as td de nome, função e salário, criar as colunas de edição e exclusão e por fim, incluindo cada item 
+pra dentro do nosso body */
 
-function openModal(edit = false, index = 0) {
-    modal.classList.add('active')
+function insertItem(item, index) {
+    let tr = document.createElement("tr")
 
-    modal.onclick = e => {
-        if(e.target.className.indexOf('modal-container') === -1) {
-            modal.classList.remove('ative')
-        }
-    }
-    if(edit) {
-        sNome.value = itens[index].nome
-        sFuncao.value = itens[index].funcao
-        sSalario.value = itens[index].salario
-        id = index
-    } else {
-        sNome.value = ''
-        sFuncao.value = ''
-        sSalario.value = ''
-    }
+    tr.innerHTML = `
+    <td>${item.nome}</td>
+    <td>${item.funcao}</td>
+    <td>${item.salario}</td>
+    <td class="acao">
+        <button onclick="editItem(${index})"><i class='bx bx-edit'> </i></button>
+    </td>
+    <td class="acao">
+        <button onclick="deleteItem(${index})"<i class='bx bx-trash'> </i></button>
+    </td>
+    `
+    tbody.appendChild(tr)
 }
 
-/* Incluir o salvamento dos dados no btn salvar*/
+/* Incluir o salvamento dos dados no btn salvar, criar validação pra caso deixe o campo vazio e após preencher
+ele atribuir, se o array vier de uma edição, ele irá  atualizar os array com os valores da tela 
+caso contrário, ele vai dar um push no novo item pro nosso banco, após isso irá atualizar o banco, sendo edição ou inclusão
+*/
+
+btnSalvar.onclick = e => {
+    if(sNome.value == '' || sFuncao.value == '' || sSalario.value == '') {
+        return
+}
+
+e.preventDefault();
+
+if(id !== undefined) {
+    itens[id].nome = sNome.value
+    itens[id].funcao = sFuncao.value
+    itens[id].salario = sSalario.value
+} else {
+    itens.push({'nome': sNome.value, 'funcao': sFuncao.value, "salario": sSalario.value})
+}
+
+setItensBD()
+
+modal.classList.remove('active')
+loadItens()
+id = undefined
+}
+
+/* Função pra quando a tela for carregada e vai pegar os itens do nosso banco de dados e será feito um for em cada dado
+pra que seja criada cada linha através do insertItem  que será criado abaixo dessa função */
+
+
+function loadItens(){
+    itens = getItensBD()
+    tbody.innerHTML = ''
+    itens.forEach((item, index) => {
+        insertItem(item, index)
+    })
+}
+
+
+/* Função para pegar os itens do banco através do getItem do nosso banco dbfunc e caso não tiver nada, vai retornar um array vazio */
+const getItensBD = () => JSON.parse(localStorage.getItem('dbfunc')) ?? [];
+/* Função para setar os items da nossa variável itens pra dentro do nosso banco */
+const setItensBD = () => localStorage.setItem('dbfunc', JSON.stringify(itens));
+
+
+
+
+loadItens()
 
 
 
